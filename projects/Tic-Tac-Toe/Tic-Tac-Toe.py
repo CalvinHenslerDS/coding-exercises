@@ -71,6 +71,8 @@ def make_move(board, computer_first):
     computer_first = not computer_first
     return board, computer_first
 
+
+
 def win_check(board):
 #print(len(set(board[0])))
 #print(board[0])
@@ -78,17 +80,44 @@ def win_check(board):
 
     set_lengths_rows = []
     set_lengths_columns = []
+
     set_length_diag = len(set(np.diag(board)))
+    sum_diag = sum(np.diag(board))
+    print(set_length_diag)
+    print(sum_diag)
     set_length_antidiag = len(set(np.diag(np.fliplr(board))))
+    sum_antidiag = sum(np.diag(np.fliplr(board)))
+    # print(set_length_antidiag)
+    # print(sum_antidiag)
     
     for i in board:
         set_lengths_rows.append(len(set(i)))
         sum_rows = sum(board)
+    
+    sum_rows_list = sum_rows.tolist()
+
+    # print(set_lengths_rows)
+    # print(sum_rows)
+    # print(sum_rows_list)
+
     for i in board.T:
         set_lengths_columns.append(len(set(i)))
         sum_columns = sum(board.T)
 
+    sum_columns_list = sum_columns.tolist()
 
+    # print(set_lengths_columns)
+    # print(sum_columns)
+    # print(sum_columns_list)
+
+    for i in set_lengths_columns:
+        if set_lengths_columns == 1 and sum_columns_list == 3:
+            print("The computer won along column %i" % i)
+        elif set_lengths_columns == 1 and sum_columns_list == 6:
+            print("The challenger won along column %i" % i)
+
+win_check(board_2)
+print(board_2)
 #for i in set_lengths_rows:
 #    if i == 1:
 
