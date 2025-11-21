@@ -77,7 +77,8 @@ def win_check(board):
 #print(len(set(board[0])))
 #print(board[0])
 #print(board[:,0])
-
+    computer_winner = False
+    challenger_winner = False
     set_lengths_rows = []
     set_lengths_columns = []
 
@@ -110,11 +111,58 @@ def win_check(board):
     # print(sum_columns)
     # print(sum_columns_list)
 
+    if set_length_diag == 1:
+        if sum_diag == 3:
+            computer_winner = True
+            print("The computer won along the diagonal")
+            return computer_winner, challenger_winner
+        elif sum_diag == 6:
+            challenger_winner = True
+            print("The challenger won along the diagonal")
+            return computer_winner, challenger_winner
+        else:
+            pass
+    
+    if set_length_antidiag == 1:
+        if sum_antidiag == 3:
+            computer_winner = True
+            print("The computer won along the antidiagonal")
+            return computer_winner, challenger_winner
+        elif sum_antidiag == 6:
+            challenger_winner = True
+            print("The challenger won along the antidiagonal")
+            return computer_winner, challenger_winner
+        else:
+            pass
+
     for i in set_lengths_columns:
         if set_lengths_columns == 1 and sum_columns_list == 3:
+            computer_winner = True
             print("The computer won along column %i" % i)
+            return computer_winner, challenger_winner
         elif set_lengths_columns == 1 and sum_columns_list == 6:
+            challenger_winner = True
             print("The challenger won along column %i" % i)
+            return computer_winner, challenger_winner
+        else:
+            continue
+
+    for i in set_lengths_rows:
+        if set_lengths_rows == 1 and sum_rows_list == 3:
+            computer_winner = True
+            print("The computer won along column %i" % i)
+            return computer_winner, challenger_winner
+        elif set_lengths_rows == 1 and sum_rows_list == 6:
+            challenger_winner = True
+            print("The challenger won along column %i" % i)
+            return computer_winner, challenger_winner
+        else:
+            return computer_winner, challenger_winner
+    
+
+
+    
+            
 
 win_check(board_2)
 print(board_2)
