@@ -60,7 +60,7 @@ def make_move(board, computer_move):
 
     # Otherwise, prompt the user to input the row and column of an item in board that is currently equal to 0, and change it to 2
     else:
-        player_move_coordinates = input("Select an empty square to place an 'O' in: (format: row#,column#)")
+        player_move_coordinates = input("Select an empty square to place a '2' in: (format: row#,column#)")
         player_move_coordinates_int_list = list(map(int, player_move_coordinates.split(',')))
 
         # Initialize a boolean to facilitate error handling if an invalid input is given
@@ -76,7 +76,7 @@ def make_move(board, computer_move):
             # If the input does not correspond to coordinates of an item in board that is equal to 0, prompt the user for a valid input and repeat the validation check
             else:
                 print("That input is invalid.")
-                player_move_coordinates = input("Select an empty square to place an 'O' in: (format: row#,column#)")
+                player_move_coordinates = input("Select an empty square to place a '2' in: (format: row#,column#)")
                 player_move_coordinates_int_list = list(map(int, player_move_coordinates.split(',')))
 
         # Update board with the user's valid input
@@ -106,7 +106,6 @@ def win_check(board):
     sum_diag = sum(np.diag(board))
     sum_antidiag = sum(np.diag(np.fliplr(board)))
     
-    
     for i in board:
 
         # Append the length of the set of each row to set_lengths_rows
@@ -118,22 +117,16 @@ def win_check(board):
         # Create an array comprised of the sums of the items in the columns of the board
         sum_columns = np.sum(board, axis=0)
 
-    # Append the length of the set of each column to set_lengths_columns
     for i in board.T:
+         
+         # Append the length of the set of each column to set_lengths_columns
          set_lengths_columns.append(len(set(i)))
 
     # Convert sum_rows and sum_columns to lists
     sum_rows_list = sum_rows.tolist()
     sum_columns_list = sum_columns.tolist()
 
-
-
-    sum_columns_list = sum_columns.tolist()
-
-    print(set_lengths_columns)
-    print(sum_columns)
-    print(sum_columns_list)
-
+    # If there is only one unique entry in the diagonal, declare the computer or the user the winner if the sum of the diagonals is 3 or 6 respectively
     if set_length_diag == 1:
         if sum_diag == 3:
             computer_winner = True
@@ -146,80 +139,95 @@ def win_check(board):
         else:
             pass
     
+    # If there is only one unique entry in the antidiagonal, declare the computer or the user the winner if the sum of the antidiagonals is 3 or 6 respectively
     if set_length_antidiag == 1:
+
         if sum_antidiag == 3:
             computer_winner = True
             print(board, "The computer won along the antidiagonal")
             return computer_winner, challenger_winner
+        
         elif sum_antidiag == 6:
             challenger_winner = True
             print(board, "The challenger won along the antidiagonal")
             return computer_winner, challenger_winner
+        
+        # Otherwise, proceed to the next check
         else:
             pass
 
-    for i in set_lengths_columns:
+    # Iterate over the rows
+    for i in range(len(set_lengths_rows)):
+
+        # If there is only one unique entry in the current row, declare the computer or the user the winner if the sum of the row items is 3 or 6 respectively
+        if set_lengths_rows[i] == 1 and sum_rows_list[i] == 3:
+            computer_winner = True
+            print(board, "The computer won along row %i" % i)
+            return computer_winner, challenger_winner
+        
+        elif set_lengths_rows[i] == 1 and sum_rows_list[i] == 6:
+            challenger_winner = True
+            print(board, "The challenger won along row %i" % i)
+            return computer_winner, challenger_winner
+        
+        # Otherwise, proceed to the next check
+        else:
+            continue
+
+    # Iterate over the columns
+    for i in range(len(set_lengths_columns)):
+
+        # If there is only one unique entry in the current column, declare the computer or the user the winner if the sum of the column items is 3 or 6 respectively
         if set_lengths_columns[i] == 1 and sum_columns_list[i] == 3:
             computer_winner = True
             print(board, "The computer won along column %i" % i)
             return computer_winner, challenger_winner
+        
         elif set_lengths_columns[i] == 1 and sum_columns_list[i] == 6:
             challenger_winner = True
             print(board, "The challenger won along column %i" % i)
             return computer_winner, challenger_winner
+        
+        # Otherwise, exit win_check and return computer_winner and challenger_winner
         else:
             continue
 
-    for i in set_lengths_rows:
-        if set_lengths_rows[i] == 1 and sum_rows_list[i] == 3:
-            computer_winner = True
-            print(board, "The computer won along column %i" % i)
-            return computer_winner, challenger_winner
-        elif set_lengths_rows[i] == 1 and sum_rows_list[i] == 6:
-            challenger_winner = True
-            print(board, "The challenger won along column %i" % i)
-            return computer_winner, challenger_winner
-        else:
-            return computer_winner, challenger_winner
+    return computer_winner, challenger_winner
 
 def play_game():
+
+    # Initialize an empty board represented by a 2D, 3x3 NumPy array of zeros
     board = np.zeros((3,3))
+
+    turn_counter = 0
+
+    # Call coin_flip and store the result as computer_move to determine who plays first
     computer_move = coin_flip()
     
-    for i in range(10):
+    computer_winner = False
+    challenger_winner = False
+
+    while (computer_winner and challenger_winner) == False:
+        
+        turn_counter += 1
+
+        # Print the current board state
         print(board)
+
+        # Call make_move to update board with either the computer's random move or the user's inputted move
         board, computer_move = make_move(board, computer_move)
+
+        # Call win_check to determine whether the most recent move resulted in a win for the computer or the user
         computer_winner, challenger_winner = win_check(board)
+
+        # If a win condition has been satisfied, return computer_winner, challenger_winner, and board
         if (computer_winner or challenger_winner) == True:
             return computer_winner, challenger_winner, board
-        else:
-            continue
-
-play_game()
-
-'''
-    if computer_turn == True:
-
-        if len(candidate_positions) > 0:
-            random_candidate_position = np.random.choice(candidate_positions)
-'''
-
-
-'''
-    if len(candidate_positions) > 0:
-        random_candidate_position = np.random.choice(candidate_positions)
-'''        
-
-
-
-'''
-def play_tic_tac_toe():
-
-    computer_first = coin_flip()
-
-    if computer_first == True:
         
+        # If all squares are filled without satisfying a win condition, report a tie and return computer_winner, challenger_winner, and board
+        if turn_counter == 9:
+            print("All squares are full, and neither player won-- it's a Cat's Game!")
+            return computer_winner, challenger_winner, board
 
-
-play_tic_tac_toe()
-'''
+# Call play_game to play a game of Tic-Tac-Toe
+play_game()
