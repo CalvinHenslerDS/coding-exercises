@@ -4,6 +4,104 @@ import numpy as np
 import random
 import pickle
 
+def win_check(board):
+
+    # Initialize booleans to track whether either player has satisfied a win condition
+    player_1_winner = False
+    player_2_winner = False
+
+    # Initialize empty lists to store the lengths of the sets of the rows and columns of board
+    set_lengths_rows = []
+    set_lengths_columns = []
+
+    # Calculate the length of the set of the diagonal and antidiagonal of board
+    set_length_diag = len(set(np.diag(board)))
+    set_length_antidiag = len(set(np.diag(np.fliplr(board))))
+
+    # Calculate the sum of the diagonal and antidiagonal of board
+    sum_diag = sum(np.diag(board))
+    sum_antidiag = sum(np.diag(np.fliplr(board)))
+    
+    for i in board:
+
+        # Append the length of the set of each row to set_lengths_rows
+        set_lengths_rows.append(len(set(i)))
+
+        # Create an array comprised of the sums of the items in the rows of board
+        sum_rows = np.sum(board, axis=1)
+
+        # Create an array comprised of the sums of the items in the columns of the board
+        sum_columns = np.sum(board, axis=0)
+
+    for i in board.T:
+         
+         # Append the length of the set of each column to set_lengths_columns
+         set_lengths_columns.append(len(set(i)))
+
+    # Convert sum_rows and sum_columns to lists
+    sum_rows_list = sum_rows.tolist()
+    sum_columns_list = sum_columns.tolist()
+
+    # If there is only one unique entry in the diagonal, declare player 1 or 2 the winner if the sum of the diagonals is 3 or 6 respectively
+    if set_length_diag == 1:
+        if sum_diag == 3:
+            player_1_winner = True
+            return player_1_winner, player_2_winner
+        elif sum_diag == 6:
+            player_2_winner = True
+            return player_1_winner, player_2_winner
+        else:
+            pass
+    
+    # If there is only one unique entry in the antidiagonal, declare player 1 or 2 the winner if the sum of the antidiagonals is 3 or 6 respectively
+    if set_length_antidiag == 1:
+
+        if sum_antidiag == 3:
+            player_1_winner = True
+            return player_1_winner, player_2_winner
+        
+        elif sum_antidiag == 6:
+            player_2_winner = True
+            return player_1_winner, player_2_winner
+        
+        # Otherwise, proceed to the next check
+        else:
+            pass
+
+    # Iterate over the rows
+    for i in range(len(set_lengths_rows)):
+
+        # If there is only one unique entry in the current row, declare player 1 or 2 the winner if the sum of the row items is 3 or 6 respectively
+        if set_lengths_rows[i] == 1 and sum_rows_list[i] == 3:
+            player_1_winner = True
+            return player_1_winner, player_2_winner
+        
+        elif set_lengths_rows[i] == 1 and sum_rows_list[i] == 6:
+            player_2_winner = True
+            return player_1_winner, player_2_winner
+        
+        # Otherwise, proceed to the next check
+        else:
+            continue
+
+    # Iterate over the columns
+    for i in range(len(set_lengths_columns)):
+
+        # If there is only one unique entry in the current column, declare player 1 or 2 the winner if the sum of the column items is 3 or 6 respectively
+        if set_lengths_columns[i] == 1 and sum_columns_list[i] == 3:
+            player_1_winner = True
+            return player_1_winner, player_2_winner
+        
+        elif set_lengths_columns[i] == 1 and sum_columns_list[i] == 6:
+            player_2_winner = True
+            return player_1_winner, player_2_winner
+        
+        # Otherwise, exit win_check and return player_1_winner and player_2_winner
+        else:
+            continue
+
+    return player_1_winner, player_2_winner
+
 # Create a class to build a q table which evaluates and stores the maximum quality of each potential action for a given board state
 class QAgent:
 
@@ -101,24 +199,102 @@ class QAgent:
         # Update the q value with new_q based on the result of the Bellman Equation
         self.q_table[state][action] = new_q
 
+        # Initialize objects, player_1 and player_2, from the QAgent class with corresponding player_id
         player_1 = QAgent(player_id=1)
         player_2 = QAgent(player_id=2)
 
+        # Establish the number of training runs
         episodes = 10000
 
+        # Iterate episodes times
         for i in range(episodes):
+
+            # Initialize a 3x3 NumPy array of zeros to represent the tic-tac-toe board
             board = np.zeros((3, 3), dtype = int)
+            
+            # Initialize a boolean to enable the computer to play the game within a while loop until a win condition is satisfied
             game_over = False
+
+            # Initialize a variable to track the current player to enable proper reward assignment
             current_player = player_1
 
+            # Initialize variables in which to store the last states and actions of each player with which to populate the Bellman Equation and, subsequently, q_table
             player_1_last_state = None
             player_1_last_action = None
             player_2_last_state = None
             player_2_last_action = None
 
+            # Until a win condition is satisfied or the board is full...
             while not game_over:
+
+                # Initialize a list that contains the zipped indices corresponding to each 0 in the board
                 available_moves = list(zip(*np.where(board == 0)))
+
+                # Call the choose_action function method on the current_player instance and store it in the variable action
                 action = current_player.choose_action(board, available_moves)
+
+                # Initialize a variable prev_board_copy to store a copy of the current board state
                 prev_board_copy = board.copy()
+
+                # Replace the item corresponding to the indices of action with the id of the current player (1 or 2)
                 board[action] = current_player.player_id
-                winner = check_win(board)
+
+                # Call win_check to determine whether the most recent move resulted in a win for either player
+                player_1_winner, player_2_winner = win_check(board)
+
+                # Assign player_1 or player_2 to winner if the move did result in a win, otherwise assign None to winner
+                if player_1_winner == True:
+                    winner = player_1
+                elif player_2_winner == True:
+                    winner = player_2
+                else:
+                    winner = None
+
+                # Assign game_over to true if either player is assigned to winner or if the board is full
+                game_over = winner is not None or 0 not in board
+
+                if current_player == player_1:
+                    # If player_1 just moved, update last_state and last_action for player_1
+                    player_1_last_state = prev_board_copy
+                    player_1_last_action = action
+
+                    if game_over:
+
+                        # If the game just ended, update the player_1 and player_2 instances based on the outputs of the learn function
+                        if winner == player_1:
+
+                            # Reward the winner with +10
+                            player_1.learn(player_1_last_state, action, 10, board, True)
+
+                            # Reward the loser with -10
+                            player_2.learn(player_2_last_state, player_2_last_action, -10, board, True)
+
+                        # Reward both players with +2 if the result is a tie
+                        elif winner is None:
+                            player_1.learn(player_1_last_state, action, 2, board, True)
+                            player_2.learn(player_2_last_state, player_2_last_action, 2, board, True)
+
+                else:
+
+                    # If player_2 just moved, update last_state and last_action for player_2
+                    player_2_last_state = prev_board_copy
+                    player_2_last_action = action
+
+                    # If the game is not over, update the player_1 instance based on the outputs of the learn function, but do not give a reward
+                    if not game_over:
+                        player_1.learn(player_1_last_state, player_1_last_action, 0, board, False)
+
+                    # If the game just ended, update the player_1 and player_2 instances based on the outputs of the learn function
+                    if game_over:
+                        if winner == player_2:
+                            # Reward the winner with +10
+                            player_2.learn(player_2_last_state, action, 10, board, True)
+                            # Reward the loser with -10
+                            player_1.learn(player_1_last_state, player_1_last_action, -10, board, True)
+                        elif winner is None:
+                            # Reward both players with +2 if the result is a tie
+                            player_1.learn(player_1_last_state, player_1_last_action, 2, board, True)
+                            player_2.learn(player_2_last_state, action, 2, board, True)
+
+                # Switch current_player             
+                current_player = player_2 if current_player == player_1 else player_1
