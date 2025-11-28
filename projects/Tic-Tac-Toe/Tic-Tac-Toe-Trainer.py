@@ -100,3 +100,25 @@ class QAgent:
 
         # Update the q value with new_q based on the result of the Bellman Equation
         self.q_table[state][action] = new_q
+
+        player_1 = QAgent(player_id=1)
+        player_2 = QAgent(player_id=2)
+
+        episodes = 10000
+
+        for i in range(episodes):
+            board = np.zeros((3, 3), dtype = int)
+            game_over = False
+            current_player = player_1
+
+            player_1_last_state = None
+            player_1_last_action = None
+            player_2_last_state = None
+            player_2_last_action = None
+
+            while not game_over:
+                available_moves = list(zip(*np.where(board == 0)))
+                action = current_player.choose_action(board, available_moves)
+                prev_board_copy = board.copy()
+                board[action] = current_player.player_id
+                winner = check_win(board)
