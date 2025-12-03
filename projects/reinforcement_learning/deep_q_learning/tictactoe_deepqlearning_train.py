@@ -7,8 +7,21 @@ from collections import deque
 import numpy as np
 import random
 
+
+
 class DQN(nn.Module):
+    """Deep Q-Network for evaluating Tic-Tac-Toe board states.
+    
+    This network takes a 3x3 board as input (flattened to 9 units)
+    and outputs a Q-Value for each possible action on the board.
+    The architecture consists of two hidden layers with ReLU activations.
+    
+    Attributes:
+    net (nn.Sequential): The neural network responsible for computing Q-values.
+    """
+
     def __init__(self):
+        """Initialize the DQN architecture."""
         super().__init__()
         self.net = nn.Sequential(
             nn.Flatten(),
@@ -20,13 +33,45 @@ class DQN(nn.Module):
         )
 
     def forward(self, x):
+        """Forward pass through the network.
+        
+        Args:
+            x (torch.Tensor): Input tensor representing the board state,
+                shaped as (batch_size, 3, 3).
+                
+        Returns:
+            torch.Tensor: Q-values for each of the 9 board positions.
+        """
         return self.net(x)
         
 # Create a class to build a q table which evaluates and stores the maximum quality of each potential action for a given board state
 class DQNAgent:
-
+    """Deep Q-Learning agent for playing Tic-Tac-Toe.
+    
+    This agent maintains a policy network, a targeting network, an experience
+    replay buffer, and implements epsilon-greedy action selection, Bellman updates,
+    and periodic target-network synchronization.
+    
+    Attributes:
+        player_id (int): Identifier of the player (1 or 2).
+        epsilon (float): Exploration probability for epsilon-greedy policy.
+        gamma (float): Discount factor for future rewards.
+        memory (deque): Experience replay buffer containing transitions.
+        batch_size (int): Number of samples used per training step.
+        model (DQN): The primary Q-network updated during training.
+        target_model (DQN): The target Q-network used for stable training.
+        optim (torch.optim.Optimizer): Optimizer for the Q-network.
+        loss_fn (nn.Module): Loss function used for Q-value updates.
+    """
     def __init__(self, player_id, epsilon=0.2, gamma=0.9, lr=1e-3):
-
+        """Initialize the DQNAgent with hyperparameters and neural networks.
+        
+        Args:
+            player_id (int): ID representing the player (1 or 2).
+            epsilon (float, optional): Exploration rate. Defaults to 0.2
+            gamma (float, optional): Discount factor. Defaults to 0.9.
+            lr (float, optional): Learning rate for optimizer. Defaults to 1e-3.
+        """
         # Initialize player_id (1 or 2) to distinguish between players while training
         self.player_id = player_id
 
@@ -48,13 +93,38 @@ class DQNAgent:
 
     # Define a function to compress the NumPy array representing the board state into a string to facilitate state storage
     def get_state_tensor(self, board):
+        """Convert a NumPy board array into a standardized PyTorch tensor.
+        
+        Player 1 is encoded as +1, and player 2 is encoded as -1. This
+        normalization helps the neural network learn symmetrically and
+        reduces redundant patterns.
+        
+        Args:
+            board (np.ndarray): 3x3 Tic-Tac-Toe board.
+            
+        Returns:
+            torch.Tensor: Tensor of shape (1, 3, 3) containing normalized board values.
+        """
+
         enc = board.copy()
         enc[enc == 2] = -1
         return torch.tensor(enc, dtype = torch.float32).unsqueeze(0)
     
     # Define a function to choose the next action by selecting the highest quality available action for the given board state (based on q_table)
     def choose_action(self, board, available_moves):
-
+        """Select an action using an epsilon-greedy policy.
+        
+        With probability epsilon, a random action is selected for exploration.
+        Otherwise, the action with the highest predicted Q-value is chosen,
+        but only among legal moves.
+        
+        Args:
+            board (np.ndarray): Current Tic-Tac-Toe board (3x3).
+            available_moves (list[tuple[int, int]]): List of legal (row, col) moves.
+            
+        Returns:
+            tuple[int, int]: The chosen move as (row, col).
+        """
         if random.random() < self.epsilon:
             return random.choice(available_moves)
 
@@ -70,9 +140,27 @@ class DQNAgent:
         return (best_index // 3, best_index % 3)
     
     def remember(self, state, action, reward, next_state, done):
+        """Store a transition in the experience replay buffer.
+        
+        Args:
+            state (np.array): The previous board state.
+            action (tuple[int, int]): Action taken (row, col).
+            reward (float): Reward received after taking the action.
+            next_state (np.ndarray): Resulting board state.
+            done (bool): Whether the episode terminated after this transition.
+        """
         self.memory.append((state.copy(), action, reward, next_state.copy(), done))
 
     def replay(self):
+        """Perform one training step using a batch of replayed experiences.
+        
+        If enough experiences exist in memory, a minibatch is sampled and
+        used to compute target Q-values using the Bellman equation. The
+        policy network is then updated using gradient descent.
+        
+        Returns:
+            None: This method updates model weights in place.
+        """
         if len(self.memory) < self.batch_size:
             return
         
@@ -107,10 +195,26 @@ class DQNAgent:
         self.optim.step()
 
     def update_target(self):
+        """Synchronize the target network with the current policy network.
+        
+        Copies the parameters of the policy network to the target network.
+        This is essential for training stability in DQN.
+        """
         self.target_model.load_state_dict(self.model.state_dict())
 
 def win_check(board):
-
+    """Check the Tic-Tac-Toe board for a winner.
+    
+    Evaluates all rows, columns, the main diagonal, and the anti-diagonal
+    for a line of three identical, non-zero markers.
+    
+    Args:
+        board (np.ndarray): A 3x3 array representing the game board.
+        
+    Returns:
+        int | None: The ID of the winning player (1 or 2) or None if
+            no winner exists yet.
+    """
     for i in range(3):
         
         # Check whether any rows contain all 1s or 2s
