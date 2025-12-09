@@ -182,29 +182,46 @@ class DQNAgent:
         states = []
         targets = []
 
+        # Encode the current and next state, convert it to a tensor, and reshape it to (1,9)
         for state, action, reward, next_state, done in batch:
             s = self.get_state_tensor(state).view(-1,9)
             ns = self.get_state_tensor(next_state).view(-1,9)
 
+            # Get the Q-values for the current state from the policy network to serve as the initial target
+            # Detach the current state to prevent gradients from flowing through
             target = self.model(s).detach()
+
+            # Get the Q-values for the next state from the target network for stability
             qvals_next = self.target_model(ns).detach()
 
+            # If the game ended, set the target Q-value equal to the immediate reward
             if done:
                 target[0][action[0]*3 + action[1]] = reward
+            
+            # If the game did not end, set the Q-value equal to the immediate reward plus the gamme-discounted maximum predicted Q-value of the next state
             else:
                 target[0][action[0]*3 + action[1]] = reward + self.gamma * torch.max(qvals_next)
 
             states.append(s)
             targets.append(target)
 
+        # Take the list of individual state and target tensors and stack them vertically into (batch_size, 9) dimension state and target tensors
         states = torch.vstack(states)
         targets = torch.vstack(targets)
 
+        # Get the predicted Q-values from the policy network for the entire batch of states
         preds = self.model(states)
+
+        # Calculate the loss (MSE) between the predicted Q-values and the Bellman target Q-values
         loss = self.loss_fn(preds, targets)
 
+        # Clear previous gradients
         self.optim.zero_grad()
+
+        # Compute the gradients of the loss with respect to the network parameters
         loss.backward()
+
+        # Update the network weights using the optimizer
         self.optim.step()
 
     def update_target(self):
@@ -256,7 +273,7 @@ def win_check(board):
     
     return None
 
-# Initialize objects, player_1 and player_2, from the QAgent class with corresponding player_id
+# Initialize objects, player_1 and player_2, from the DQNAgent class with corresponding player_id
 player_1 = DQNAgent(player_id=1, epsilon = 0.9)
 player_2 = DQNAgent(player_id=2, epsilon = 0.9)
 
@@ -268,7 +285,6 @@ win_reward = 10
 loss_reward = -10
 draw_reward = 2
 
-# Iterate episodes times
 for i in range(episodes):
 
     # Initialize a 3x3 NumPy array of zeros to represent the tic-tac-toe board
@@ -291,6 +307,7 @@ for i in range(episodes):
         # Initialize a list that contains the zipped indices corresponding to each 0 in the board
         available_moves = list(zip(*np.where(board == 0)))
 
+        # If no available moves are left, end the game in a draw
         if not available_moves:
             winner = None
             game_over = True
