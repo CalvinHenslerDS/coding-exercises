@@ -373,7 +373,7 @@ for i in range(episodes):
 
     
 
-    # Every 10000 episodes, print a status update including the current episode, the epsilon of player_1 to four digits, and the size of q_table
+    # Every 1000 episodes, print a status update including the current episode and the epsilon of player_1 to four digits
     if i % 1000 == 0:
         player_1.update_target()
         player_2.update_target()
@@ -382,6 +382,7 @@ for i in range(episodes):
 
 print("\nTraining Complete!")
 
+# Save the learned weights
 player_1_path = 'player_1_dqn.pth'
 player_2_path = 'player_2_dqn.pth'
 torch.save(player_1.model.state_dict(), player_1_path)
